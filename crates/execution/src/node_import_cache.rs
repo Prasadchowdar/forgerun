@@ -12020,6 +12020,14 @@ export async function loadPyodide(options) {
             &pyodide_dir.path().join("pyodide-lock.json"),
             "{\"packages\":[]}\n",
         );
+        write_fixture(
+            &pyodide_dir.path().join("python_stdlib.zip"),
+            "",
+        );
+        write_fixture(
+            &pyodide_dir.path().join("pyodide.asm.wasm"),
+            "",
+        );
 
         let output = run_python_runner_prewarm(
             &import_cache,
@@ -12269,7 +12277,7 @@ export async function loadPyodide(options) {
         );
 
         assert_eq!(output.status.code(), Some(0));
-        assert_eq!(stdout, "packages:numpy,pandas\ncode:print('hello')\n");
+        assert_eq!(stdout, "packages:micropip\npackages:numpy,pandas\ncode:print('hello')\n");
         assert!(
             stderr.contains(&expected_package_base),
             "expected local package base path in stderr, got: {stderr}"
