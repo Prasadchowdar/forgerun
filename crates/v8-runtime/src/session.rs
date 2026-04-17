@@ -1080,7 +1080,8 @@ pub fn run_event_loop(
 
 /// Dispatch a single BinaryFrame within the event loop.
 /// Returns the event-loop status after handling the frame.
-pub(crate) enum EventLoopStatus {
+#[derive(Debug)]
+pub enum EventLoopStatus {
     Completed,
     Terminated,
     Failed(i32, ExecutionError),
