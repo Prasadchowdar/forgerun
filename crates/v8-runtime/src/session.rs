@@ -998,7 +998,10 @@ pub fn run_event_loop(
         // Flush microtasks before blocking. Run in a loop to drain the full
         // microtask queue -- each checkpoint may resolve Promises that schedule
         // new microtasks (e.g., async function await chains).
+        // Also pump V8 foreground tasks first so background-worker completions
+        // (e.g. WebAssembly.compile) are posted back before we flush microtasks.
         for _ in 0..100 {
+            crate::isolate::pump_platform_tasks(&mut **scope);
             scope.perform_microtask_checkpoint();
             // Check if new deferred work appeared from microtask processing
             if let Some(dq) = deferred {
@@ -1039,7 +1042,8 @@ pub fn run_event_loop(
             if let Some(cmd) = recv_result {
                 break cmd;
             }
-            // No command received — flush microtasks and check deferred queue
+            // No command received — pump foreground tasks then flush microtasks
+            crate::isolate::pump_platform_tasks(&mut **scope);
             scope.perform_microtask_checkpoint();
             if let Some(dq) = deferred {
                 if !dq.lock().unwrap().is_empty() {

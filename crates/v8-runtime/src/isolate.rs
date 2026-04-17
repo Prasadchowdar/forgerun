@@ -1,11 +1,15 @@
 // V8 isolate lifecycle: platform init, create, configure, destroy
 
 use std::collections::HashMap;
-use std::sync::Once;
+use std::sync::{Once, OnceLock};
 
 use crate::ipc::ExecutionError;
 
 static V8_INIT: Once = Once::new();
+
+/// Shared platform handle retained so foreground tasks (e.g. WebAssembly.compile
+/// callbacks) can be pumped by `pump_platform_tasks` inside `run_event_loop`.
+static PLATFORM: OnceLock<v8::SharedRef<v8::Platform>> = OnceLock::new();
 
 #[repr(align(16))]
 struct AlignedBytes<const N: usize>([u8; N]);
@@ -56,9 +60,23 @@ pub fn init_v8_platform() {
         v8::icu::set_common_data_74(&ICU_COMMON_DATA.0)
             .expect("failed to initialize V8 ICU common data");
         let platform = v8::new_default_platform(0, false).make_shared();
+        // Retain a clone for pump_platform_tasks before consuming into V8.
+        let _ = PLATFORM.set(platform.clone());
         v8::V8::initialize_platform(platform);
         v8::V8::initialize();
     });
+}
+
+/// Pump V8 foreground tasks for the given isolate.
+///
+/// Must be called from the isolate's thread to drain tasks posted by
+/// background workers (e.g. WebAssembly.compile) that need to resolve
+/// JS promises before `perform_microtask_checkpoint` can see them.
+/// No-op if the platform has not been initialized yet.
+pub fn pump_platform_tasks(isolate: &mut v8::Isolate) {
+    if let Some(platform) = PLATFORM.get() {
+        while v8::Platform::pump_message_loop(platform, isolate, false) {}
+    }
 }
 
 /// Create a new V8 isolate with an optional heap limit in MB.
