@@ -1,0 +1,197 @@
+---
+title: TypeScript
+description: Sandboxed type checking and compilation via @secure-exec/typescript.
+icon: "code"
+---
+
+The maintained Secure-Exec compatibility surface includes a companion package
+for sandboxed TypeScript tooling. `@secure-exec/typescript` runs the TypeScript
+compiler inside the sandbox runtime instead of the host process, so untrusted
+compile and typecheck work stays inside the same execution boundary.
+
+## Runnable example
+
+```ts Type-Checked Execution
+import { anthropic } from "@ai-sdk/anthropic";
+import { createTypeScriptTools } from "@secure-exec/typescript";
+import { generateText, stepCountIs, tool } from "ai";
+import {
+	allowAll,
+	createNodeDriver,
+	createNodeRuntimeDriverFactory,
+	NodeRuntime,
+} from "secure-exec";
+import { z } from "zod";
+
+const systemDriver = createNodeDriver({
+	moduleAccess: {
+		cwd: process.cwd(),
+	},
+	permissions: allowAll,
+});
+const runtimeDriverFactory = createNodeRuntimeDriverFactory();
+
+const runtime = new NodeRuntime({
+	systemDriver,
+	runtimeDriverFactory,
+	memoryLimit: 64,
+	cpuTimeLimitMs: 5000,
+});
+const ts = createTypeScriptTools({
+	systemDriver,
+	runtimeDriverFactory,
+	memoryLimit: 256,
+	cpuTimeLimitMs: 5000,
+});
+
+try {
+	const { text } = await generateText({
+		model: anthropic("claude-sonnet-4-6"),
+		prompt:
+			"Write TypeScript that calculates the first 20 fibonacci numbers. Assign the result to module.exports.",
+		stopWhen: stepCountIs(5),
+		tools: {
+			execute_typescript: tool({
+				description:
+					"Type-check TypeScript in a sandbox, compile it, then run the emitted JavaScript in a sandbox. Return diagnostics when validation fails.",
+				inputSchema: z.object({ code: z.string() }),
+				execute: async ({ code }) => {
+					const typecheck = await ts.typecheckSource({
+						sourceText: code,
+						filePath: "/root/generated.ts",
+						compilerOptions: {
+							module: "commonjs",
+							target: "es2022",
+						},
+					});
+
+					if (!typecheck.success) {
+						return {
+							ok: false,
+							stage: "typecheck",
+							diagnostics: typecheck.diagnostics,
+						};
+					}
+
+					const compiled = await ts.compileSource({
+						sourceText: code,
+						filePath: "/root/generated.ts",
+						compilerOptions: {
+							module: "commonjs",
+							target: "es2022",
+						},
+					});
+
+					if (!compiled.success || !compiled.outputText) {
+						return {
+							ok: false,
+							stage: "compile",
+							diagnostics: compiled.diagnostics,
+						};
+					}
+
+					const execution = await runtime.run<Record<string, unknown>>(
+						compiled.outputText,
+						"/root/generated.js",
+					);
+
+					if (execution.code !== 0) {
+						return {
+							ok: false,
+							stage: "run",
+							errorMessage:
+								execution.errorMessage ??
+								`Sandbox exited with code ${execution.code}`,
+						};
+					}
+
+					return {
+						ok: true,
+						stage: "run",
+						exports: execution.exports,
+					};
+				},
+			}),
+		},
+	});
+
+	console.log(text);
+} finally {
+	runtime.dispose();
+}
+```
+
+Source: [`examples/ai-agent-type-check/src/index.ts`](../../examples/ai-agent-type-check/src/index.ts)
+
+## Install
+
+```bash
+pnpm add secure-exec @secure-exec/typescript typescript
+```
+
+## Setup
+
+```ts
+import { createNodeDriver, createNodeRuntimeDriverFactory } from "secure-exec";
+import { createTypeScriptTools } from "@secure-exec/typescript";
+
+const ts = createTypeScriptTools({
+  systemDriver: createNodeDriver({
+    moduleAccess: {
+      cwd: process.cwd(),
+    },
+  }),
+  runtimeDriverFactory: createNodeRuntimeDriverFactory(),
+});
+```
+
+`moduleAccess.cwd` exposes the host package's `node_modules/` to the sandbox as
+a read-only module tree, which lets the compiler runtime import packages like
+`typescript` without copying them into the sandbox filesystem first.
+
+## Type-check a source string
+
+```ts
+const result = await ts.typecheckSource({
+  sourceText: "const value: string = 1;",
+  filePath: "/root/input.ts",
+});
+
+console.log(result.success); // false
+console.log(result.diagnostics[0]?.message);
+```
+
+## Compile a source string
+
+```ts
+const result = await ts.compileSource({
+  sourceText: "export const value: number = 3;",
+  filePath: "/root/input.ts",
+  compilerOptions: {
+    module: "commonjs",
+    target: "es2022",
+  },
+});
+
+console.log(result.outputText);
+```
+
+## Type-check or compile a project
+
+```ts
+await ts.typecheckProject({ cwd: "/root/project" });
+await ts.compileProject({ cwd: "/root/project" });
+```
+
+## Diagnostic shape
+
+```ts
+type TypeScriptDiagnostic = {
+  code: number;
+  category: "error" | "warning" | "suggestion" | "message";
+  message: string;
+  filePath?: string;
+  line?: number;
+  column?: number;
+};
+```

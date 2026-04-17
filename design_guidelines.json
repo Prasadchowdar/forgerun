@@ -1,0 +1,112 @@
+{
+  "theme": "dark",
+  "archetype": "Archetype 4 (Swiss & High-Contrast)",
+  "typography": {
+    "fonts": {
+      "headings": "Chivo",
+      "body": "IBM Plex Sans",
+      "monospace": "JetBrains Mono"
+    },
+    "scale": {
+      "h1": "text-4xl sm:text-5xl tracking-tight font-black",
+      "h2": "text-2xl sm:text-3xl tracking-tight font-bold",
+      "h3": "text-xl sm:text-2xl font-semibold",
+      "h4": "text-lg sm:text-xl font-medium",
+      "body": "text-sm sm:text-base leading-relaxed",
+      "small": "text-xs tracking-wider uppercase",
+      "code": "text-sm font-mono"
+    },
+    "rules": [
+      "Never use Inter or generic sans for headings.",
+      "Use tight line-height (leading-none) for headings, loose (leading-relaxed) for body.",
+      "Overlines/Labels MUST be Uppercase + Tiny + Wide Spacing (tracking-[0.2em])."
+    ]
+  },
+  "colors": {
+    "background": {
+      "base": "#0A0A0B",
+      "surface": "#121316",
+      "elevated": "#1A1B1E",
+      "glass": "rgba(10, 10, 11, 0.6)"
+    },
+    "text": {
+      "primary": "#FFFFFF",
+      "secondary": "#A1A1AA",
+      "muted": "#71717A"
+    },
+    "brand": {
+      "primary": "#2563EB",
+      "primaryHover": "#3B82F6",
+      "accent": "#F97316"
+    },
+    "status": {
+      "success": "#10B981",
+      "warning": "#F59E0B",
+      "error": "#EF4444",
+      "info": "#3B82F6"
+    },
+    "border": {
+      "default": "rgba(255, 255, 255, 0.1)",
+      "focus": "rgba(37, 99, 235, 0.5)"
+    },
+    "rules": [
+      "No teal or purple.",
+      "Tint neutral greys slightly to make them feel alive.",
+      "Never use pure black or pure white backgrounds.",
+      "Interactive elements must have 3:1 contrast against adjacent colors."
+    ]
+  },
+  "layout": {
+    "grid": {
+      "mode": "The Control Room Grid",
+      "columns": "grid-cols-1 md:grid-cols-3 lg:grid-cols-4",
+      "gap": "gap-4 md:gap-6"
+    },
+    "spacing": {
+      "container": "p-6 md:p-8",
+      "widget": "p-4 md:p-6",
+      "generous": "p-12 md:p-16"
+    },
+    "rules": [
+      "Every pixel must be utilized in the Control Room grid.",
+      "Containers with borders must have internal padding.",
+      "Mobile-First: Always start with grid-cols-1."
+    ]
+  },
+  "surfaces": {
+    "strategy": "Grid Borders (The 'Technical' Look)",
+    "components": {
+      "header": "Crystal Glass - backdrop-blur-xl bg-[#0A0A0B]/60 with 1px delicate inner stroke (border-white/10).",
+      "cards": "Flat background, 1px subtle border (border-white/10), no shadow. Hover: border color brightens, subtle shadow.",
+      "compiler": "Retro-Futurism / Terminal Look. Deep black background, subtle neon accents, scanlines or mono typography.",
+      "buttons": "Neumorphic tactile or crisp flat with 1px border. Explicit hover states."
+    }
+  },
+  "motion": {
+    "rules": [
+      "Minimalist animations — use micro-interactions for feedback.",
+      "Hover states on all interactive elements.",
+      "Transition effects for smooth state changes (e.g., transition: transform 0.2s ease, opacity 0.2s ease)."
+    ]
+  },
+  "components": {
+    "instructions_to_main_agent": [
+      "Use Pure HTML + Tailwind CSS for structure and layout (Grid, Containers).",
+      "Use pure Radix/Shadcn UI for logic components (Select, Tabs, Dialogs) but strip generic styling to match the technical theme.",
+      "Use Recharts for Performance & Cost Graphs.",
+      "For the Self-Healing Loop Visualization, use 3 interconnected cards (Observer, Planner, Healer) with animated SVG arrows or borders (Tracing Beam style).",
+      "For the Verifiable Ledger Timeline, use a vertical list with left-bordered dots connecting each event.",
+      "For the Deploy Wrapper, simulate a terminal with a dark background and green/white monospaced text output.",
+      "All interactive elements MUST include data-testid attribute.",
+      "Ensure navigation bar is visible on desktop, not hidden behind a hamburger."
+    ]
+  },
+  "icons": {
+    "library": "lucide-react",
+    "instructions": "Use lucide-react for all standard icons. For highly technical visuals, build SVG diagrams inline."
+  },
+  "media": {
+    "image_urls": {},
+    "instructions": "No external images used. Rely on typography, grid structures, and CSS patterns (like subtle radial gradients or grid backgrounds) to provide visual interest."
+  }
+}
