@@ -964,7 +964,7 @@ pub(crate) const ASYNC_BRIDGE_FNS: &[&str] = &[
 /// the abort channel unblocks and terminates execution.
 ///
 /// Returns true if execution completed normally, false if terminated.
-pub(crate) fn run_event_loop(
+pub fn run_event_loop(
     scope: &mut v8::HandleScope,
     rx: &Receiver<SessionCommand>,
     pending: &crate::bridge::PendingPromises,
